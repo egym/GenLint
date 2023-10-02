@@ -1,3 +1,4 @@
+import Foundation
 import PackagePlugin
 
 @main
@@ -5,11 +6,7 @@ struct SwiftGenBuildToolPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: Target) throws -> [Command] {
         let swiftgen = try context.tool(named: "swiftgen")
         let config = context.package.directory.appending(".swiftgen.yml")
-        let output = context.pluginWorkDirectory
-
-        print("swiftgen: \(swiftgen.path)")
-        print("config: \(config)")
-        print("output: \(output)")
+        let output = outputPath(for: context)
 
         return [
             .prebuildCommand(
@@ -28,5 +25,19 @@ struct SwiftGenBuildToolPlugin: BuildToolPlugin {
                 outputFilesDirectory: output
             )
         ]
+    }
+
+    private func outputPath(for context: PluginContext) -> Path {
+        switch isXcodeCloudEnvironment {
+        case true:
+            return Path("/Volumes/workspace/DerivedData/SourcePackages/plugins")
+
+        default:
+            return context.pluginWorkDirectory
+        }
+    }
+
+    private var isXcodeCloudEnvironment: Bool {
+        ProcessInfo().environment["CI_XCODE_CLOUD"] == "TRUE"
     }
 }
